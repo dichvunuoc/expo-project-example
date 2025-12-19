@@ -9,6 +9,7 @@ import { Link, Stack } from 'expo-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Text, View } from 'react-native';
+import { FieldErrors } from 'react-hook-form';
 
 export default function SignInScreen() {
   const loginMutation = useLogin();
@@ -29,8 +30,8 @@ export default function SignInScreen() {
     loginMutation.mutate(data);
   };
 
-  const onError = (errors: any) => {
-    const firstError = Object.values(errors)[0] as any;
+  const onError = (errors: FieldErrors<LoginFormData>) => {
+    const firstError = Object.values(errors)[0];
     if (firstError?.message) {
       Alert.alert('Validation Error', firstError.message);
     }

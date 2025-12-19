@@ -30,15 +30,12 @@ jest.mock('react-native-reanimated', () => {
   return Reanimated;
 });
 
-// Silence the warning: Animated: `useNativeDriver` is not supported because the native animated module is missing
-// jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
-
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => {
   const inset = { top: 0, right: 0, bottom: 0, left: 0 };
   return {
-    SafeAreaProvider: ({ children }) => children,
-    SafeAreaConsumer: ({ children }) => children(inset),
+    SafeAreaProvider: ({ children }: { children: any }) => children,
+    SafeAreaConsumer: ({ children }: { children: any }) => children(inset),
     useSafeAreaInsets: () => inset,
     useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
   };
@@ -75,17 +72,15 @@ jest.mock('react-native-screens', () => ({
   screensEnabled: jest.fn(() => true),
 }));
 
-// Mock AsyncStorage - package not installed
-// jest.mock('@react-native-async-storage/async-storage', () => ({
-//   getItem: jest.fn(),
-//   setItem: jest.fn(),
-//   removeItem: jest.fn(),
-//   clear: jest.fn(),
-//   getAllKeys: jest.fn(),
-//   multiGet: jest.fn(),
-//   multiSet: jest.fn(),
-//   multiRemove: jest.fn(),
-// }));
+// Mock react-native-mmkv
+jest.mock('react-native-mmkv', () => ({
+  createMMKV: jest.fn(() => ({
+    set: jest.fn(),
+    getString: jest.fn(),
+    remove: jest.fn(),
+    clearAll: jest.fn(),
+  })),
+}));
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -110,26 +105,13 @@ jest.mock('expo-router', () => ({
   Drawer: 'Drawer',
 }));
 
-// Mock react-native-mmkv
-jest.mock('react-native-mmkv', () => ({
-  createMMKV: jest.fn(() => ({
-    set: jest.fn(),
-    getString: jest.fn(),
-    remove: jest.fn(),
-    clearAll: jest.fn(),
-  })),
-}));
-
-// Mock zustand
-jest.mock('zustand');
-
 // Mock @tanstack/react-query
 jest.mock('@tanstack/react-query', () => ({
   useMutation: jest.fn(({ mutationFn, onSuccess, onError }) => ({
     mutate: jest.fn((variables) => {
       mutationFn(variables)
-        .then((result) => onSuccess && onSuccess(result))
-        .catch((error) => onError && onError(error));
+        .then((result: any) => onSuccess && onSuccess(result))
+        .catch((error: any) => onError && onError(error));
     }),
     mutateAsync: jest.fn(mutationFn),
     isLoading: false,
@@ -146,48 +128,7 @@ jest.mock('@tanstack/react-query', () => ({
     refetch: jest.fn(),
   })),
   QueryClient: jest.fn(),
-  QueryClientProvider: ({ children }) => children,
-}));
-
-// Mock zustand
-jest.mock('zustand', () => ({
-  create: jest.fn(() => {
-    // Create initial state
-    const initialState = {
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isHydrated: false,
-      signIn: jest.fn(),
-      signOut: jest.fn(),
-      hydrate: jest.fn(),
-    };
-
-    // Return a mock hook function that can be used as a selector
-    const mockHook = jest.fn((selector) => {
-      if (typeof selector === 'function') {
-        return selector(initialState);
-      }
-      return initialState;
-    });
-
-    return mockHook;
-  }),
-}));
-
-// Mock zustand middleware
-jest.mock('zustand/middleware', () => ({
-  persist: (stateFunc) => {
-    // Return a function that expects a create function and calls it with the state function
-    return (create) => {
-      return create(stateFunc);
-    };
-  },
-  createJSONStorage: () => ({
-    setItem: jest.fn(),
-    getItem: jest.fn(() => null),
-    removeItem: jest.fn(),
-  }),
+  QueryClientProvider: ({ children }: { children: any }) => children,
 }));
 
 // Global test timeout
