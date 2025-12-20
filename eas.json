@@ -1,0 +1,61 @@
+{
+  "cli": {
+    "version": ">= 3.0.0",
+    "requireCommit": true
+  },
+  "build": {
+    "development": {
+      "channel": "development",
+      "distribution": "internal",
+      "ios": {
+        "enterpriseProvisioning": "generic"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      }
+    },
+    "preview": {
+      "channel": "preview",
+      "distribution": "store",
+      "ios": {
+        "simulator": true,
+        "enterpriseProvisioning": "generic"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "distribution": "store",
+      "ios": {
+        "enterpriseProvisioning": "generic"
+      },
+      "android": {
+        "buildType": "aab",
+        "gradleCommand": ":app:assembleRelease"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "appleTeamId": "ABCD123456"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      }
+    }
+  },
+  "hooks": {
+    "preBuild": {
+      "command": "npm run type-check && npm run lint"
+    },
+    "postBuild": {
+      "command": "echo 'Build completed successfully!'"
+    }
+  }
+}

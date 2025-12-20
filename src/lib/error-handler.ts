@@ -178,6 +178,8 @@ export class ServerError extends APIError {
 /**
  * Error handler utility functions
  */
+import { logger, error as logError } from '@/utils/logger';
+
 export class ErrorHandler {
   /**
    * Handle unknown errors and convert them to APIError
@@ -249,12 +251,11 @@ export class ErrorHandler {
       timestamp: new Date().toISOString(),
     };
 
-    if (__DEV__) {
-      console.error('🚨 Error Handler:', logData);
-    } else {
-      // In production, send to error monitoring service (e.g., Sentry)
-      console.error('Error Handler:', logData);
-    }
+    // Use logger utility for consistent logging
+    logError('Error Handler logged an error', logData, {
+      component: 'ErrorHandler',
+      action: 'log',
+    });
   }
 
   /**

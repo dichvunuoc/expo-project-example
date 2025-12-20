@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import { useAuthStore } from '@/features/auth/store';
 import { ErrorHandler, NetworkError } from './error-handler';
+import { api as logger } from '@/utils/logger';
 import axios, {
   AxiosError,
   AxiosRequestConfig,
@@ -7,39 +9,69 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 
+// Get API URL from environment variables
+const getApiBaseURL = (): string => {
+  // Priority: Environment variable > Default staging > Default local
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
+  if (__DEV__) {
+    return 'http://localhost:3000/api'; // Local development
+  }
+
+  return 'https://api.staging.example.com'; // Default staging
+};
+
 const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://api.example.com',
+  baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'X-App-Version': process.env.EXPO_PUBLIC_APP_VERSION || '1.0.0',
+    'X-Platform': Platform.OS, // Add platform info for debugging
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 15000, // 15 seconds timeout
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Get current token from Zustand store
     const token = useAuthStore.getState().token;
+
+    // Add authorization header if token exists
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Add request timestamp for debugging
-    if (__DEV__) {
-      console.log(
-        `🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`,
-        {
-          params: config.params,
-          data: config.data,
-        }
-      );
-    }
+    // Add request ID for tracking
+    const requestId = Math.random().toString(36).substring(2, 15);
+    config.headers['X-Request-ID'] = requestId;
+
+    // Log request using logger utility
+    logger.request(
+      config.method?.toUpperCase() || 'UNKNOWN',
+      config.url || 'unknown',
+      {
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        baseURL: config.baseURL,
+        params: config.params,
+        data: config.data,
+        headers: {
+          ...config.headers,
+          Authorization: token ? 'Bearer [REDACTED]' : undefined,
+        },
+      },
+      requestId
+    );
 
     return config;
   },
   (error: AxiosError) => {
     const apiError = ErrorHandler.handle(error);
-    ErrorHandler.log(apiError, 'Request Interceptor');
+    ErrorHandler.log(apiError, 'Request Interceptor Error');
     return Promise.reject(apiError);
   }
 );
@@ -47,23 +79,44 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    if (__DEV__) {
-      console.log(
-        `✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`,
-        {
-          status: response.status,
-          data: response.data,
-        }
-      );
-    }
-    return response;
+    // Log successful response using logger utility
+    const requestId = response.config.headers['X-Request-ID'];
+    logger.response(
+      response.config.method?.toUpperCase() || 'UNKNOWN',
+      response.config.url || 'unknown',
+      response.status,
+      {
+        status: response.status,
+        statusText: response.statusText,
+        duration: response.headers['X-Response-Time'],
+        data: response.data,
+        requestId,
+      },
+      requestId
+    );
+
+    // Return response with additional metadata
+    return {
+      ...response,
+      meta: {
+        requestId: response.config.headers['X-Request-ID'],
+        timestamp: new Date().toISOString(),
+      },
+    };
   },
   (error: AxiosError) => {
-    // Handle network errors
+    // Get request ID for logging
+    const requestId = error.config?.headers?.['X-Request-ID'];
+
+    // Handle network errors (no response received)
     if (!error.response && !error.request) {
       const networkError = new NetworkError(
         'Network connection error. Please check your internet connection and try again.',
-        { originalError: error }
+        {
+          originalError: error,
+          requestId,
+          timestamp: new Date().toISOString(),
+        }
       );
       ErrorHandler.log(networkError, 'Network Error');
       return Promise.reject(networkError);
@@ -72,21 +125,64 @@ apiClient.interceptors.response.use(
     // Handle timeout errors
     if (error.code === 'ECONNABORTED') {
       const timeoutError = new NetworkError(
-        'Request timeout. Please check your connection and try again.',
-        { originalError: error }
+        'Request timeout. The server took too long to respond. Please try again.',
+        {
+          originalError: error,
+          requestId,
+          timeout: error.config?.timeout,
+        }
       );
       ErrorHandler.log(timeoutError, 'Timeout Error');
       return Promise.reject(timeoutError);
     }
 
-    // Handle auth errors
-    if (error.response?.status === 401) {
-      useAuthStore.getState().signOut();
+    // Handle CORS errors
+    if (
+      error.message.includes('Network Error') &&
+      error.response?.status === 0
+    ) {
+      const corsError = new NetworkError(
+        'CORS error. The server is not configured to accept requests from this domain.',
+        {
+          originalError: error,
+          requestId,
+        }
+      );
+      ErrorHandler.log(corsError, 'CORS Error');
+      return Promise.reject(corsError);
     }
 
-    // Convert to APIError
+    // Handle authentication errors (401, 403)
+    if (error.response?.status === 401) {
+      // Clear auth state and redirect to login
+      const authStore = useAuthStore.getState();
+      if (authStore.token) {
+        logger.warn(
+          'Auto logout due to 401 response',
+          {
+            reason: 'Authentication failed',
+            status: error.response?.status,
+            url: error.config?.url,
+          },
+          {
+            component: 'Axios',
+            action: 'AUTO_LOGOUT',
+          }
+        );
+        authStore.signOut();
+      }
+    }
+
+    // Convert to APIError with additional context
     const apiError = ErrorHandler.handle(error);
-    ErrorHandler.log(apiError, 'Response Interceptor');
+    if (requestId) {
+      apiError.details = {
+        ...apiError.details,
+        requestId,
+      };
+    }
+
+    ErrorHandler.log(apiError, 'Response Interceptor Error');
     return Promise.reject(apiError);
   }
 );

@@ -49,7 +49,7 @@ Một thiết kế "hợp lý" không chỉ là việc sắp xếp các file cho
 2.1 Phân tích Cấu trúc Cấp cao: Cuộc chiến /app vs /src
 Trong các tài liệu hướng dẫn cũ, bạn thường thấy mã nguồn nằm rải rác ở thư mục gốc. Tuy nhiên, với Expo Router, thực tiễn tốt nhất là sử dụng thư mục /src để chứa toàn bộ mã nguồn logic, và chỉ sử dụng /app cho việc định tuyến.4
 Dưới đây là sơ đồ cây thư mục chi tiết cho dự án mẫu:
-/expo-enterprise-template
+/com-techgen-template
 ├── /.husky # Git hooks (pre-commit, commit-msg) để đảm bảo chất lượng code
 ├── /app # Chỉ chứa logic điều hướng Expo Router
 │ ├── \_layout.tsx # Root Layout (Providers, Fonts, Splash Screen)

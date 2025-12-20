@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Alert, Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { error as logger, user } from '@/utils/logger';
 
 interface ErrorOptions {
   title?: string;
@@ -34,9 +35,12 @@ export const useErrorHandler = () => {
           message = String(error.message);
         }
 
-        // Log to console in development
-        if (IS_DEV && showInDev) {
-          console.error(`${title}:`, error);
+        // Log to console using logger utility
+        if (showInDev || logToService) {
+          logger(`${title}`, error, {
+            component: 'useErrorHandler',
+            action: 'handleError',
+          });
         }
 
         // TODO: Log to error tracking service in production

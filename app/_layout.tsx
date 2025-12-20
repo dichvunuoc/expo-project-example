@@ -9,20 +9,22 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
-import '../../global.css';
+import '../global.css';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/features/auth/store';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  usePushNotifications();
   const colorScheme = useColorScheme();
 
   const [fontsLoaded] = useFonts({
-    SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   const { isAuthenticated, isHydrated, hydrate } = useAuthStore();

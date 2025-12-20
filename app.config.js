@@ -6,7 +6,7 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 // Base configuration
 const baseConfig = {
   name: process.env.EXPO_PUBLIC_APP_NAME || 'Expo Enterprise Template',
-  slug: process.env.EXPO_PUBLIC_SLUG || 'expo-enterprise-template',
+  slug: process.env.EXPO_PUBLIC_SLUG || 'com-techgen-template',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
@@ -22,15 +22,44 @@ const baseConfig = {
     supportsTablet: true,
     bundleIdentifier:
       process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || 'com.company.expoapp',
+    // Deep linking configuration for iOS
+    associatedDomains: [
+      process.env.EXPO_PUBLIC_DEEP_LINK_HOST
+        ? `applinks:${process.env.EXPO_PUBLIC_DEEP_LINK_HOST}`
+        : `applinks:expoapp.example.com`,
+    ],
+    // Universal Links configuration
+    universalLinks: [
+      process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'expoapp.example.com',
+    ],
   },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/images/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
-    package: process.env.EXPO_PUBLIC_ANDROID_PACKAGE || 'com.company.expoapp',
+    package: process.env.EXPO_PUBLIC_ANDROID_PACKAGE || 'com.techgen.expo',
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    // Deep linking configuration for Android
+    intentFilters: [
+      {
+        action: 'VIEW',
+        data: {
+          scheme: process.env.EXPO_PUBLIC_SCHEME || 'expoapp',
+          host: '*',
+        },
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+      {
+        action: 'VIEW',
+        data: {
+          scheme: 'https',
+          host: process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'expoapp.example.com',
+        },
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
   },
   web: {
     bundler: 'metro',
@@ -41,6 +70,13 @@ const baseConfig = {
     'expo-router',
     'expo-font',
     [
+      'expo-notifications',
+      {
+        icon: './assets/images/icon.png',
+        color: '#ffffff',
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         backgroundColor: '#ffffff',
@@ -48,6 +84,8 @@ const baseConfig = {
         imageWidth: 200,
       },
     ],
+    // Deep linking configuration
+    // expo-linking is not a config plugin. Configuration is handled in android/ios sections.
   ],
   experiments: {
     typedRoutes: true,
