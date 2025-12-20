@@ -1,0 +1,4 @@
+env:
+  APP_ID: com.techgen.expo
+  TEST_EMAIL: test@example.com
+  TEST_PASSWORD: password123

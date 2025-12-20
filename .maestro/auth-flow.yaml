@@ -1,0 +1,10 @@
+appId: ${APP_ID}
+---
+- launchApp
+- tapOn: 'Enter your email'
+- inputText: ${TEST_EMAIL}
+- tapOn: 'Enter your password'
+- inputText: ${TEST_PASSWORD}
+- tapOn: 'Sign In'
+# Wait specifically for the Home text to appear to ensure navigation happened
+- assertVisible: 'Home Tab'

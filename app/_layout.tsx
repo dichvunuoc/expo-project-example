@@ -24,14 +24,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
 
+import { useOfflineSyncManager } from '@/hooks/useOfflineSyncManager';
+
 /**
  * Network status indicator component
  */
 function NetworkStatusIndicator() {
   const { isConnected, isInternetReachable } = useNetworkStatus();
+  const { isSyncing } = useOfflineSyncManager();
   const insets = useSafeAreaInsets();
 
-  // Only show when offline (optional - can be removed if not needed)
+  // Show when syncing
+  if (isSyncing) {
+    return (
+      <View
+        className="absolute left-0 right-0 z-50 items-center bg-blue-500 p-2"
+        style={{ top: insets.top }}
+      >
+        <Text className="text-white text-xs font-bold">
+          Syncing offline data...
+        </Text>
+      </View>
+    );
+  }
+
+  // Show when offline
   if (isConnected && isInternetReachable) {
     return null;
   }
