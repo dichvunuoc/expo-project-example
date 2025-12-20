@@ -4,11 +4,37 @@
  */
 
 import { createMMKV } from 'react-native-mmkv';
+import { z } from 'zod';
+
+// Get encryption key from environment variables
+const getEncryptionKey = (): string => {
+  // In production, encryption key is required
+  if (process.env.NODE_ENV === 'production') {
+    const key = process.env.EXPO_PUBLIC_STORAGE_KEY;
+    if (!key) {
+      throw new Error(
+        'EXPO_PUBLIC_STORAGE_KEY is required in production. Please set it in your environment variables.'
+      );
+    }
+    return key;
+  }
+
+  // In development, use environment key or fallback for convenience
+  const key =
+    process.env.EXPO_PUBLIC_STORAGE_KEY ||
+    'dev-fallback-key-change-in-production';
+  if (key === 'dev-fallback-key-change-in-production') {
+    console.warn(
+      '⚠️ Using fallback encryption key in development. Set EXPO_PUBLIC_STORAGE_KEY for better security.'
+    );
+  }
+  return key;
+};
 
 // Storage instance
 const storage = createMMKV({
   id: 'app-storage',
-  encryptionKey: 'secret-key',
+  encryptionKey: getEncryptionKey(),
 });
 
 // Storage keys constants
@@ -38,6 +64,10 @@ export interface IStorageService {
     value: T
   ): Promise<void>;
   get<T extends StorageValue>(key: StorageKey | string): Promise<T | null>;
+  getVerified<T>(
+    key: StorageKey | string,
+    schema: z.ZodSchema<T>
+  ): Promise<T | null>;
   remove(key: StorageKey | string): Promise<void>;
   clear(): Promise<void>;
   getAllKeys(): Promise<string[]>;
@@ -72,6 +102,55 @@ export class StorageService implements IStorageService {
       throw new Error(
         `Failed to store value for key "${key}": ${error instanceof Error ? error.message : 'Unknown error'}`
       );
+    }
+  }
+
+  /**
+   * Get a value from storage with proper type validation using Zod
+   * @param key - Storage key
+   * @param schema - Zod schema to validate the data
+   * @returns The stored value if validation succeeds, null otherwise
+   */
+  async getVerified<T>(
+    key: StorageKey | string,
+    schema: z.ZodSchema<T>
+  ): Promise<T | null> {
+    try {
+      const value = storage.getString(key);
+
+      if (value === undefined || value === null) {
+        return null;
+      }
+
+      // Try to parse as JSON first
+      let parsedValue: unknown;
+      try {
+        parsedValue = JSON.parse(value);
+      } catch {
+        // If JSON parsing fails, use the raw value
+        parsedValue = value;
+      }
+
+      // Validate with schema
+      const result = schema.safeParse(parsedValue);
+
+      if (result.success) {
+        return result.data;
+      } else {
+        console.error(
+          `Storage validation failed for key "${key}":`,
+          result.error
+        );
+        // Remove corrupted data to prevent persistent errors
+        await this.remove(key);
+        return null;
+      }
+    } catch (error) {
+      console.error(
+        `Failed to retrieve verified value for key "${key}":`,
+        error
+      );
+      return null;
     }
   }
 
@@ -283,6 +362,35 @@ export const AppStorage = {
     return settings[setting] || null;
   },
 
+  setBiometricEnabled: async (enabled: boolean): Promise<void> => {
+    await AppStorage.setSetting('biometricEnabled', enabled);
+  },
+
+  getBiometricEnabled: async (): Promise<boolean> => {
+    return (await AppStorage.getSetting<boolean>('biometricEnabled')) ?? false;
+  },
+
+  setLastBiometricAuth: async (timestamp: string): Promise<void> => {
+    await AppStorage.setSetting('lastBiometricAuth', timestamp);
+  },
+
+  getLastBiometricAuth: async (): Promise<string | null> => {
+    return await AppStorage.getSetting<string>('lastBiometricAuth');
+  },
+
+  isBiometricAuthRecent: async (
+    minutesThreshold: number = 30
+  ): Promise<boolean> => {
+    const lastAuth = await AppStorage.getLastBiometricAuth();
+    if (!lastAuth) return false;
+
+    const lastAuthTime = new Date(lastAuth).getTime();
+    const currentTime = new Date().getTime();
+    const thresholdMs = minutesThreshold * 60 * 1000;
+
+    return currentTime - lastAuthTime < thresholdMs;
+  },
+
   setLanguage: async (language: string): Promise<void> => {
     await storageService.set(STORAGE_KEYS.LANGUAGE, language);
   },
@@ -317,17 +425,6 @@ export const AppStorage = {
   isOnboardingCompleted: async (): Promise<boolean> => {
     const result = await storageService.get<boolean>(
       STORAGE_KEYS.ONBOARDING_COMPLETED
-    );
-    return result || false;
-  },
-
-  setBiometricEnabled: async (enabled: boolean): Promise<void> => {
-    await storageService.set(STORAGE_KEYS.BIOMETRIC_ENABLED, enabled);
-  },
-
-  isBiometricEnabled: async (): Promise<boolean> => {
-    const result = await storageService.get<boolean>(
-      STORAGE_KEYS.BIOMETRIC_ENABLED
     );
     return result || false;
   },

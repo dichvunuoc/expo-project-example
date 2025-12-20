@@ -5,7 +5,7 @@ const IS_DEV = process.env.NODE_ENV === 'development';
 
 // Base configuration
 const baseConfig = {
-  name: process.env.EXPO_PUBLIC_APP_NAME || 'Expo Enterprise Template',
+  name: process.env.EXPO_PUBLIC_APP_NAME || 'Expo Techgen Template',
   slug: process.env.EXPO_PUBLIC_SLUG || 'com-techgen-template',
   version: '1.0.0',
   orientation: 'portrait',
@@ -21,16 +21,25 @@ const baseConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier:
-      process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || 'com.company.expoapp',
+      process.env.EXPO_PUBLIC_IOS_BUNDLE_ID || 'com.techgen.expo',
+    // Biometric authentication permissions
+    infoPlist: {
+      NSFaceIDUsageDescription:
+        'We use Face ID to securely authenticate you and protect your account.',
+      NSFaceIDChangeUsageDescription:
+        'We use Face ID to securely authenticate you and protect your account.',
+      NSTouchIDUsageDescription:
+        'We use Touch ID to securely authenticate you and protect your account.',
+    },
     // Deep linking configuration for iOS
     associatedDomains: [
       process.env.EXPO_PUBLIC_DEEP_LINK_HOST
         ? `applinks:${process.env.EXPO_PUBLIC_DEEP_LINK_HOST}`
-        : `applinks:expoapp.example.com`,
+        : `applinks:demo.cudanso.vn`,
     ],
     // Universal Links configuration
     universalLinks: [
-      process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'expoapp.example.com',
+      process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'demo.cudanso.vn',
     ],
   },
   android: {
@@ -55,7 +64,7 @@ const baseConfig = {
         action: 'VIEW',
         data: {
           scheme: 'https',
-          host: process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'expoapp.example.com',
+          host: process.env.EXPO_PUBLIC_DEEP_LINK_HOST || 'demo.cudanso.vn',
         },
         category: ['BROWSABLE', 'DEFAULT'],
       },
@@ -122,7 +131,7 @@ const prodConfig = {
     ...baseConfig.plugins,
     // Add production plugins
     [
-      'expo-sentry',
+      '@sentry/react-native/expo',
       {
         organization: process.env.SENTRY_ORG,
         project: process.env.SENTRY_PROJECT,

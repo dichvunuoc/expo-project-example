@@ -1,11 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
+import { getQueryClientConfig, setupOnlineManager } from './online-manager';
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 1000 * 60, // 1 minute
-      gcTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
+// Initialize online manager for network status monitoring
+setupOnlineManager();
+
+// Create enhanced query client with offline support
+export const queryClient = new QueryClient(getQueryClientConfig());
