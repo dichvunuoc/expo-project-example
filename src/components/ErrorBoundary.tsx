@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { logger, error, user } from '@/utils/logger';
+import { logger, error as logError, user } from '@/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -61,10 +61,10 @@ export class ErrorBoundary extends Component<Props, State> {
     );
 
     // Log to console (will be handled by logger in production)
-    error('Error Boundary Error', {
+    logError('Error Boundary Error', {
       errorId: this.errorId,
-      errorName: error.name,
-      errorMessage: error.message,
+      errorName: (error as Error).name,
+      errorMessage: (error as Error).message,
       componentStack: errorInfo.componentStack,
     });
 

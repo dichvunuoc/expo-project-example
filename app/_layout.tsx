@@ -18,13 +18,12 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/features/auth/store';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useOfflineSyncManager } from '@/hooks/useOfflineSyncManager';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { queryClient } from '@/lib/query-client';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
-
-import { useOfflineSyncManager } from '@/hooks/useOfflineSyncManager';
 
 /**
  * Network status indicator component
@@ -83,8 +82,8 @@ function RootLayout() {
     }
   }, [ref]);
 
-  // Initialize network status monitoring
-  useNetworkStatus();
+  // Note: Network status monitoring is handled by NetworkStatusIndicator component
+  // which uses useNetworkStatus() hook with React Query for efficient caching
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),

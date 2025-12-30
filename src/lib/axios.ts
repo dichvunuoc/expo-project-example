@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { useAuthStore } from '@/features/auth/store';
 import { ErrorHandler, NetworkError } from './error-handler';
-import { api as logger } from '@/utils/logger';
+import { api as apiLogger, warn as logWarn } from '@/utils/logger';
 import axios, {
   AxiosError,
   AxiosRequestConfig,
@@ -50,7 +50,7 @@ apiClient.interceptors.request.use(
     config.headers['X-Request-ID'] = requestId;
 
     // Log request using logger utility
-    logger.request(
+    apiLogger.request(
       config.method?.toUpperCase() || 'UNKNOWN',
       config.url || 'unknown',
       {
@@ -81,7 +81,7 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log successful response using logger utility
     const requestId = response.config.headers['X-Request-ID'];
-    logger.response(
+    apiLogger.response(
       response.config.method?.toUpperCase() || 'UNKNOWN',
       response.config.url || 'unknown',
       response.status,
@@ -157,7 +157,7 @@ apiClient.interceptors.response.use(
       // Clear auth state and redirect to login
       const authStore = useAuthStore.getState();
       if (authStore.token) {
-        logger.warn(
+        logWarn(
           'Auto logout due to 401 response',
           {
             reason: 'Authentication failed',
@@ -214,9 +214,9 @@ export const get = async <T>(
 /**
  * POST request wrapper
  */
-export const post = async <T>(
+export const post = async <T, D = Record<string, unknown>>(
   url: string,
-  data?: any,
+  data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   return apiCall<T>(() => apiClient.post(url, data, config));
@@ -225,9 +225,9 @@ export const post = async <T>(
 /**
  * PUT request wrapper
  */
-export const put = async <T>(
+export const put = async <T, D = Record<string, unknown>>(
   url: string,
-  data?: any,
+  data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   return apiCall<T>(() => apiClient.put(url, data, config));
@@ -236,9 +236,9 @@ export const put = async <T>(
 /**
  * PATCH request wrapper
  */
-export const patch = async <T>(
+export const patch = async <T, D = Record<string, unknown>>(
   url: string,
-  data?: any,
+  data?: D,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   return apiCall<T>(() => apiClient.patch(url, data, config));
