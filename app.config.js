@@ -99,6 +99,16 @@ const baseConfig = {
   experiments: {
     typedRoutes: true,
   },
+  // OTA Updates configuration
+  updates: {
+    enabled: true,
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+    url: `https://u.expo.dev/${process.env.EAS_PROJECT_ID}`,
+  },
+  runtimeVersion: {
+    policy: 'appVersion',
+  },
   // Extra variables accessible via Constants.expoConfig.extra
   extra: {
     eas: {

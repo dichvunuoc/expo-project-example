@@ -3,19 +3,52 @@
  */
 
 /**
+ * Type definitions for error details
+ */
+export interface ErrorDetails {
+  originalError?: Error;
+  validationErrors?: Record<string, string[]>;
+  requestId?: string;
+  timestamp?: string;
+  shouldLogout?: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Axios-like error structure for type checking
+ */
+interface AxiosLikeError extends Error {
+  response?: {
+    status: number;
+    data?: {
+      message?: string;
+      [key: string]: unknown;
+    };
+  };
+  code?: string;
+}
+
+/**
+ * Fetch-like error structure for type checking
+ */
+interface FetchLikeError extends Error {
+  status?: number;
+}
+
+/**
  * Custom API Error class for standardized error handling
  */
 export class APIError extends Error {
   public readonly status: number;
   public readonly code?: string;
-  public readonly details?: any;
+  public details?: ErrorDetails;
   public readonly timestamp: string;
 
   constructor(
     message: string,
     status: number = 500,
     code?: string,
-    details?: any
+    details?: ErrorDetails
   ) {
     super(message);
     this.name = 'APIError';
@@ -109,7 +142,10 @@ export class APIError extends Error {
  * Network Error class for network-related issues
  */
 export class NetworkError extends APIError {
-  constructor(message: string = 'Network connection error', details?: any) {
+  constructor(
+    message: string = 'Network connection error',
+    details?: ErrorDetails
+  ) {
     super(message, 0, 'NETWORK_ERROR', details);
     this.name = 'NetworkError';
   }
@@ -119,7 +155,7 @@ export class NetworkError extends APIError {
  * Validation Error class for form validation errors
  */
 export class ValidationError extends APIError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: ErrorDetails) {
     super(message, 422, 'VALIDATION_ERROR', details);
     this.name = 'ValidationError';
   }
@@ -129,7 +165,10 @@ export class ValidationError extends APIError {
  * Authentication Error class for auth-related errors
  */
 export class AuthenticationError extends APIError {
-  constructor(message: string = 'Authentication failed', details?: any) {
+  constructor(
+    message: string = 'Authentication failed',
+    details?: ErrorDetails
+  ) {
     super(message, 401, 'AUTH_ERROR', details);
     this.name = 'AuthenticationError';
   }
@@ -139,7 +178,7 @@ export class AuthenticationError extends APIError {
  * Authorization Error class for permission-related errors
  */
 export class AuthorizationError extends APIError {
-  constructor(message: string = 'Access denied', details?: any) {
+  constructor(message: string = 'Access denied', details?: ErrorDetails) {
     super(message, 403, 'AUTHORIZATION_ERROR', details);
     this.name = 'AuthorizationError';
   }
@@ -149,7 +188,7 @@ export class AuthorizationError extends APIError {
  * Not Found Error class for missing resources
  */
 export class NotFoundError extends APIError {
-  constructor(message: string = 'Resource not found', details?: any) {
+  constructor(message: string = 'Resource not found', details?: ErrorDetails) {
     super(message, 404, 'NOT_FOUND', details);
     this.name = 'NotFoundError';
   }
@@ -159,7 +198,7 @@ export class NotFoundError extends APIError {
  * Rate Limit Error class for rate limiting
  */
 export class RateLimitError extends APIError {
-  constructor(message: string = 'Rate limit exceeded', details?: any) {
+  constructor(message: string = 'Rate limit exceeded', details?: ErrorDetails) {
     super(message, 429, 'RATE_LIMIT', details);
     this.name = 'RateLimitError';
   }
@@ -169,7 +208,10 @@ export class RateLimitError extends APIError {
  * Server Error class for server-side errors
  */
 export class ServerError extends APIError {
-  constructor(message: string = 'Internal server error', details?: any) {
+  constructor(
+    message: string = 'Internal server error',
+    details?: ErrorDetails
+  ) {
     super(message, 500, 'SERVER_ERROR', details);
     this.name = 'ServerError';
   }
@@ -179,6 +221,25 @@ export class ServerError extends APIError {
  * Error handler utility functions
  */
 import { logger, error as logError } from '@/utils/logger';
+
+/**
+ * Type guard for Axios-like errors
+ */
+function isAxiosLikeError(error: Error): error is AxiosLikeError {
+  return (
+    'response' in error &&
+    typeof (error as AxiosLikeError).response === 'object'
+  );
+}
+
+/**
+ * Type guard for Fetch-like errors
+ */
+function isFetchLikeError(error: Error): error is FetchLikeError {
+  return (
+    'status' in error && typeof (error as FetchLikeError).status === 'number'
+  );
+}
 
 export class ErrorHandler {
   /**
@@ -203,25 +264,26 @@ export class ErrorHandler {
       }
 
       // Handle axios errors (if using axios)
-      if ('response' in error) {
-        const axiosError = error as any;
-        const status = axiosError.response?.status || 500;
+      if (isAxiosLikeError(error)) {
+        const status = error.response?.status || 500;
         const message =
-          axiosError.response?.data?.message ||
-          axiosError.message ||
-          'Request failed';
-        const code = axiosError.code;
+          error.response?.data?.message || error.message || 'Request failed';
+        const code = error.code;
 
-        return new APIError(message, status, code, axiosError.response?.data);
+        return new APIError(message, status, code, {
+          originalError: error,
+          ...error.response?.data,
+        });
       }
 
       // Handle fetch errors
-      if ('status' in error) {
-        const fetchError = error as any;
-        const status = fetchError.status || 500;
-        const message = fetchError.message || 'Request failed';
+      if (isFetchLikeError(error)) {
+        const status = error.status || 500;
+        const message = error.message || 'Request failed';
 
-        return new APIError(message, status, undefined, fetchError);
+        return new APIError(message, status, undefined, {
+          originalError: error,
+        });
       }
 
       // Generic error
@@ -236,9 +298,7 @@ export class ErrorHandler {
     }
 
     // Handle unknown error types
-    return new APIError('Unknown error occurred', 500, 'UNKNOWN_ERROR', {
-      error,
-    });
+    return new APIError('Unknown error occurred', 500, 'UNKNOWN_ERROR', {});
   }
 
   /**

@@ -2,11 +2,16 @@ import { storageService } from '@/services/storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { onlineManager } from '@tanstack/react-query';
 
+/**
+ * Mutation variables type - generic record for flexibility
+ */
+export type MutationVariables = Record<string, unknown>;
+
 // --- TS Interface ---
 export interface OfflineMutation {
   id: string;
   mutationKey: string; // Using string for simplicity, or can be JSON stringified array
-  variables: any;
+  variables: MutationVariables;
   timestamp: number;
 }
 
@@ -26,11 +31,14 @@ export class OfflineQueue {
   /**
    * Add a new mutation to the queue
    */
-  async add(mutationKey: string, variables: any): Promise<OfflineMutation> {
+  async add(
+    mutationKey: string,
+    variables: MutationVariables
+  ): Promise<OfflineMutation> {
     const queue = await this.getQueue();
 
     const newItem: OfflineMutation = {
-      id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
       mutationKey,
       variables,
       timestamp: Date.now(),
@@ -63,14 +71,20 @@ export const offlineQueue = new OfflineQueue();
 
 // --- Sync Logic ---
 
-type MutationExecutor = (mutation: OfflineMutation) => Promise<any>;
+/**
+ * Mutation executor function type
+ */
+type MutationExecutor = (mutation: OfflineMutation) => Promise<unknown>;
 
+/**
+ * Sync options configuration
+ */
 interface SyncOptions {
   executor: MutationExecutor;
   onSyncStart?: () => void;
   onSyncComplete?: () => void;
-  onMutationSuccess?: (item: OfflineMutation, result: any) => void;
-  onMutationError?: (item: OfflineMutation, error: any) => void;
+  onMutationSuccess?: (item: OfflineMutation, result: unknown) => void;
+  onMutationError?: (item: OfflineMutation, error: unknown) => void;
 }
 
 /**

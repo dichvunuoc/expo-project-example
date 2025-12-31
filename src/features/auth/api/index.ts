@@ -1,6 +1,10 @@
 import { get, post } from '@/lib/axios';
-import { ErrorHandler, AuthenticationError } from '@/lib/error-handler';
 import {
+  APIError,
+  ErrorHandler,
+  AuthenticationError,
+} from '@/lib/error-handler';
+import type {
   AuthResponse,
   LoginCredentials,
   RegisterUserData,
@@ -9,30 +13,46 @@ import {
   User,
 } from '../types';
 
+/**
+ * Helper to check if error is an APIError with specific status
+ */
+const isAPIErrorWithStatus = (
+  error: unknown,
+  status: number
+): error is APIError => {
+  return error instanceof APIError && error.status === status;
+};
+
 export const loginUser = async (
   credentials: LoginCredentials
 ): Promise<AuthResponse> => {
   try {
-    const { data } = await post<AuthResponse>('/auth/login', credentials);
-    return data;
+    return await post<AuthResponse, LoginCredentials>(
+      '/auth/login',
+      credentials
+    );
   } catch (error) {
+    const apiError = ErrorHandler.handle(error);
+
     // Convert generic errors to AuthenticationError for better user experience
-    if (error.status === 401) {
+    if (apiError.status === 401) {
       throw new AuthenticationError(
         'Invalid email or password. Please check your credentials and try again.',
-        { originalError: error }
+        { originalError: apiError }
       );
     }
 
-    if (error.status === 422) {
+    if (apiError.status === 422) {
       throw new AuthenticationError(
         'Invalid input. Please check all fields and try again.',
-        { originalError: error, validationErrors: error.details }
+        {
+          originalError: apiError,
+          validationErrors: apiError.details?.validationErrors,
+        }
       );
     }
 
-    // Re-throw the error with proper handling
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
@@ -40,45 +60,51 @@ export const registerUser = async (
   userData: RegisterUserData
 ): Promise<AuthResponse> => {
   try {
-    const { data } = await post<AuthResponse>('/auth/register', userData);
-    return data;
+    return await post<AuthResponse, RegisterUserData>(
+      '/auth/register',
+      userData
+    );
   } catch (error) {
-    if (error.status === 409) {
+    const apiError = ErrorHandler.handle(error);
+
+    if (apiError.status === 409) {
       throw new AuthenticationError(
         'Email already registered. Please use a different email or try logging in.',
-        { originalError: error }
+        { originalError: apiError }
       );
     }
 
-    if (error.status === 422) {
+    if (apiError.status === 422) {
       throw new AuthenticationError(
         'Invalid registration data. Please check all fields and try again.',
-        { originalError: error, validationErrors: error.details }
+        {
+          originalError: apiError,
+          validationErrors: apiError.details?.validationErrors,
+        }
       );
     }
 
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
-export const refreshToken = async (
-  refreshToken: string
-): Promise<AuthResponse> => {
+export const refreshToken = async (token: string): Promise<AuthResponse> => {
   try {
-    const { data } = await post<AuthResponse>('/auth/refresh', {
-      refreshToken,
+    return await post<AuthResponse, { refreshToken: string }>('/auth/refresh', {
+      refreshToken: token,
     });
-    return data;
   } catch (error) {
+    const apiError = ErrorHandler.handle(error);
+
     // Refresh token failures should trigger logout
-    if (error.status === 401 || error.status === 400) {
+    if (apiError.status === 401 || apiError.status === 400) {
       throw new AuthenticationError('Session expired. Please log in again.', {
-        originalError: error,
+        originalError: apiError,
         shouldLogout: true,
       });
     }
 
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
@@ -86,20 +112,21 @@ export const resetPassword = async (
   resetData: ResetPasswordData
 ): Promise<{ message: string }> => {
   try {
-    const { data } = await post<{ message: string }>(
+    return await post<{ message: string }, ResetPasswordData>(
       '/auth/reset-password',
       resetData
     );
-    return data;
   } catch (error) {
-    if (error.status === 404) {
+    const apiError = ErrorHandler.handle(error);
+
+    if (apiError.status === 404) {
       throw new AuthenticationError(
         'Email not found. Please check the email address and try again.',
-        { originalError: error }
+        { originalError: apiError }
       );
     }
 
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
@@ -107,46 +134,51 @@ export const changePassword = async (
   passwordData: ChangePasswordData
 ): Promise<{ message: string }> => {
   try {
-    const { data } = await post<{ message: string }>(
+    return await post<{ message: string }, ChangePasswordData>(
       '/auth/change-password',
       passwordData
     );
-    return data;
   } catch (error) {
-    if (error.status === 400) {
+    const apiError = ErrorHandler.handle(error);
+
+    if (apiError.status === 400) {
       throw new AuthenticationError(
         'Current password is incorrect or new passwords do not match.',
-        { originalError: error, validationErrors: error.details }
+        {
+          originalError: apiError,
+          validationErrors: apiError.details?.validationErrors,
+        }
       );
     }
 
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
 export const getCurrentUser = async (): Promise<User> => {
   try {
-    const { data } = await get<User>('/auth/me');
-    return data;
+    return await get<User>('/auth/me');
   } catch (error) {
-    if (error.status === 401) {
+    const apiError = ErrorHandler.handle(error);
+
+    if (apiError.status === 401) {
       throw new AuthenticationError(
         'Authentication required. Please log in again.',
-        { originalError: error }
+        { originalError: apiError }
       );
     }
 
-    throw ErrorHandler.handle(error);
+    throw apiError;
   }
 };
 
 export const logout = async (): Promise<{ message: string }> => {
   try {
-    const { data } = await post<{ message: string }>('/auth/logout');
-    return data;
+    return await post<{ message: string }>('/auth/logout');
   } catch (error) {
     // Logout should not fail user experience, so we log but don't throw
-    ErrorHandler.log(error, 'Logout Error');
+    const apiError = ErrorHandler.handle(error);
+    ErrorHandler.log(apiError, 'Logout Error');
     return { message: 'Logged out successfully' };
   }
 };

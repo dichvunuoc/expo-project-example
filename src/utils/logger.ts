@@ -6,11 +6,46 @@
 // Types for logger
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+/**
+ * Generic log data type - allows any serializable data
+ * Using a more permissive type to accept various data structures
+ */
+export type LogData =
+  | Record<string, unknown>
+  | unknown[]
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | object;
+
+/**
+ * Logger options for contextual information
+ */
+export interface LogOptions {
+  component?: string;
+  action?: string;
+  requestId?: string;
+  stack?: string;
+}
+
+/**
+ * Error-like object structure for type-safe error logging
+ */
+export interface ErrorLike {
+  message?: string;
+  status?: number;
+  code?: string;
+  stack?: string;
+  details?: Record<string, unknown>;
+}
+
 export interface LogEntry {
   level: LogLevel;
   message: string;
   timestamp: string;
-  data?: any;
+  data?: LogData;
   stack?: string;
   component?: string;
   action?: string;
@@ -109,13 +144,8 @@ class Logger {
   private log(
     level: LogLevel,
     message: string,
-    data?: any,
-    options: {
-      component?: string;
-      action?: string;
-      requestId?: string;
-      stack?: string;
-    } = {}
+    data?: LogData,
+    options: LogOptions = {}
   ): void {
     // Skip if logging is disabled
     if (!this.config.enabled) {
@@ -141,10 +171,15 @@ class Logger {
       sessionId,
     };
 
-    // Store in memory (limited entries)
+    // Store in memory (limited entries) with batch cleanup for better performance
     logStorage.push(entry);
     if (logStorage.length > this.config.maxLogEntries) {
-      logStorage.shift();
+      // Remove oldest 20% of entries for better performance than removing one at a time
+      const removeCount = Math.max(
+        1,
+        Math.floor(this.config.maxLogEntries * 0.2)
+      );
+      logStorage.splice(0, removeCount);
     }
 
     // Output based on environment
@@ -270,35 +305,19 @@ class Logger {
   /**
    * Public logging methods
    */
-  debug(
-    message: string,
-    data?: any,
-    options?: Parameters<Logger['log']>[3]
-  ): void {
+  debug(message: string, data?: LogData, options?: LogOptions): void {
     this.log('debug', message, data, options);
   }
 
-  info(
-    message: string,
-    data?: any,
-    options?: Parameters<Logger['log']>[3]
-  ): void {
+  info(message: string, data?: LogData, options?: LogOptions): void {
     this.log('info', message, data, options);
   }
 
-  warn(
-    message: string,
-    data?: any,
-    options?: Parameters<Logger['log']>[3]
-  ): void {
+  warn(message: string, data?: LogData, options?: LogOptions): void {
     this.log('warn', message, data, options);
   }
 
-  error(
-    message: string,
-    data?: any,
-    options?: Parameters<Logger['log']>[3]
-  ): void {
+  error(message: string, data?: LogData, options?: LogOptions): void {
     this.log('error', message, data, options);
   }
 
@@ -308,7 +327,7 @@ class Logger {
   apiRequest(
     method: string,
     url: string,
-    data?: any,
+    data?: LogData,
     requestId?: string
   ): void {
     this.debug(
@@ -333,7 +352,7 @@ class Logger {
     method: string,
     url: string,
     status: number,
-    data?: any,
+    data?: LogData,
     requestId?: string
   ): void {
     this.info(
@@ -355,7 +374,13 @@ class Logger {
   /**
    * Log API errors
    */
-  apiError(method: string, url: string, error: any, requestId?: string): void {
+  apiError(
+    method: string,
+    url: string,
+    error: ErrorLike | Error | unknown,
+    requestId?: string
+  ): void {
+    const errorObj = error as ErrorLike;
     this.error(
       'API Error',
       {
@@ -367,7 +392,7 @@ class Logger {
         component: 'API',
         action: method.toUpperCase(),
         requestId,
-        stack: error?.stack,
+        stack: errorObj?.stack,
       }
     );
   }
@@ -375,7 +400,7 @@ class Logger {
   /**
    * Log user actions
    */
-  userAction(action: string, data?: any): void {
+  userAction(action: string, data?: LogData): void {
     this.info(`User Action: ${action}`, data, {
       component: 'User',
       action,
@@ -423,7 +448,7 @@ class Logger {
   /**
    * Sanitize data for logging (remove sensitive info)
    */
-  private sanitizeData(data: any): any {
+  private sanitizeData(data: LogData): LogData {
     if (!data || typeof data !== 'object') return data;
 
     const sensitiveFields = [
@@ -434,15 +459,14 @@ class Logger {
       'creditCard',
       'ssn',
     ];
-    const sanitized = Array.isArray(data) ? [...data] : { ...data };
 
-    const sanitizeValue = (obj: any): any => {
+    const sanitizeValue = (obj: unknown): unknown => {
       if (Array.isArray(obj)) {
         return obj.map(sanitizeValue);
       }
 
       if (obj && typeof obj === 'object') {
-        const result: any = {};
+        const result: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(obj)) {
           if (
             sensitiveFields.some((field) =>
@@ -462,22 +486,23 @@ class Logger {
       return obj;
     };
 
-    return sanitizeValue(sanitized);
+    return sanitizeValue(data) as LogData;
   }
 
   /**
    * Sanitize error objects
    */
-  private sanitizeError(error: any): any {
-    if (!error) return error;
+  private sanitizeError(error: unknown): Record<string, unknown> | null {
+    if (!error) return null;
 
+    const errorObj = error as ErrorLike;
     return {
-      message: error.message,
-      status: error.status,
-      code: error.code,
-      stack: error.stack,
+      message: errorObj.message,
+      status: errorObj.status,
+      code: errorObj.code,
+      stack: errorObj.stack,
       // Include non-sensitive details
-      ...(error.details && { details: error.details }),
+      ...(errorObj.details && { details: errorObj.details }),
     };
   }
 
@@ -500,47 +525,39 @@ class Logger {
 const logger = new Logger();
 
 // Export convenience methods
-export const debug = (
-  message: string,
-  data?: any,
-  options?: Parameters<Logger['log']>[3]
-) => logger.debug(message, data, options);
+export const debug = (message: string, data?: LogData, options?: LogOptions) =>
+  logger.debug(message, data, options);
 
-export const info = (
-  message: string,
-  data?: any,
-  options?: Parameters<Logger['log']>[3]
-) => logger.info(message, data, options);
+export const info = (message: string, data?: LogData, options?: LogOptions) =>
+  logger.info(message, data, options);
 
-export const warn = (
-  message: string,
-  data?: any,
-  options?: Parameters<Logger['log']>[3]
-) => logger.warn(message, data, options);
+export const warn = (message: string, data?: LogData, options?: LogOptions) =>
+  logger.warn(message, data, options);
 
-export const error = (
-  message: string,
-  data?: any,
-  options?: Parameters<Logger['log']>[3]
-) => logger.error(message, data, options);
+export const error = (message: string, data?: LogData, options?: LogOptions) =>
+  logger.error(message, data, options);
 
 // Export specialized methods
 export const api = {
-  request: (method: string, url: string, data?: any, requestId?: string) =>
+  request: (method: string, url: string, data?: LogData, requestId?: string) =>
     logger.apiRequest(method, url, data, requestId),
   response: (
     method: string,
     url: string,
     status: number,
-    data?: any,
+    data?: LogData,
     requestId?: string
   ) => logger.apiResponse(method, url, status, data, requestId),
-  error: (method: string, url: string, error: any, requestId?: string) =>
-    logger.apiError(method, url, error, requestId),
+  error: (
+    method: string,
+    url: string,
+    err: ErrorLike | Error | unknown,
+    requestId?: string
+  ) => logger.apiError(method, url, err, requestId),
 };
 
 export const user = {
-  action: (action: string, data?: any) => logger.userAction(action, data),
+  action: (action: string, data?: LogData) => logger.userAction(action, data),
   setUser: (userId: string) => logger.setUser(userId),
   clearUser: () => logger.clearUser(),
 };
@@ -555,6 +572,6 @@ export const session = {
   getId: () => logger.getSessionId(),
 };
 
-// Export main logger instance and utilities
-export { logger, LogEntry, LogLevel, LoggerConfig };
+// Export main logger instance
+export { logger };
 export default logger;
