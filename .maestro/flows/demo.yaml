@@ -1,0 +1,20 @@
+# Demo Feed Flow Test
+# Tests the posts list feature
+# FSD Feature: posts/list-posts
+appId: ${APP_ID}
+---
+- launchApp
+# First, sign in
+- assertVisible: 'Welcome Back'
+- tapOn: 'Enter your email'
+- inputText: ${TEST_EMAIL}
+- tapOn: 'Enter your password'
+- inputText: ${TEST_PASSWORD}
+- tapOn: 'Sign In'
+- assertVisible: 'Home Tab'
+# Navigate to demo
+- tapOn: 'Demo'
+- assertVisible: 'Demo Feed'
+# Scroll through posts
+- scroll
+- scroll

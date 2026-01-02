@@ -1,13 +1,6 @@
-import { Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/**
+ * Home Tab (Expo Router)
+ * FSD Pattern: Proxy Pattern - Proxies to HomePage from pages layer
+ */
 
-export default function HomeScreen() {
-  return (
-    <SafeAreaView className="flex-1 bg-background items-center justify-center">
-      <Text className="text-2xl font-bold dark:text-white">Home Tab</Text>
-      <Text className="mt-2 text-gray-500 dark:text-gray-400">
-        Welcome to Expo Enterprise Template
-      </Text>
-    </SafeAreaView>
-  );
-}
+export { HomePage as default } from '@/pages/home';

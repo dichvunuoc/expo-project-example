@@ -1,13 +1,17 @@
-import { TabBarIcon } from '@/components/ui/TabBarIcon';
-import { useAuthStore } from '@/features/auth/store';
-import { useColorScheme } from '@/hooks/useColorScheme';
+/**
+ * Tabs Layout (Expo Router)
+ * FSD Pattern: Proxy Pattern
+ */
+
+import { useColorScheme } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
+import { TabBarIcon } from '@/shared/ui';
+import { useSessionStore } from '@/entities/session';
 
 export default function TabLayout() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const colorScheme = useColorScheme() ?? 'light';
 
-  // Explicitly define colors if not using a constants file yet
   const activeColor = colorScheme === 'dark' ? '#0a84ff' : '#007aff';
   const inactiveColor = colorScheme === 'dark' ? '#8e8e93' : '#8e8e93';
 
@@ -34,16 +38,14 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ color }) => <TabBarIcon name="person" color={color} />,
         }}
       />
       <Tabs.Screen
         name="demo"
         options={{
           title: 'Demo',
-          tabBarIcon: ({ color }) => (
-            <TabBarIcon name="list-alt" color={color} />
-          ),
+          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
         }}
       />
     </Tabs>
