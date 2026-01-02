@@ -1,0 +1,18 @@
+# Sign Up Flow Test
+# Tests the complete sign-up journey
+# FSD Feature: auth/sign-up-by-email
+appId: ${APP_ID}
+---
+- launchApp
+- assertVisible: 'Welcome Back'
+- tapOn: 'Sign Up'
+- assertVisible: 'Create Account'
+- tapOn: 'Enter your name'
+- inputText: Test User
+- tapOn: 'Enter your email'
+- inputText: newuser@example.com
+- tapOn: 'Enter your password'
+- inputText: password123
+- tapOn: 'Confirm your password'
+- inputText: password123
+- tapOn: 'Sign Up'

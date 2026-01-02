@@ -1,0 +1,20 @@
+# Profile Flow Test
+# Tests the profile page and sign-out feature
+# FSD Feature: auth/sign-out
+appId: ${APP_ID}
+---
+- launchApp
+# First, sign in
+- assertVisible: 'Welcome Back'
+- tapOn: 'Enter your email'
+- inputText: ${TEST_EMAIL}
+- tapOn: 'Enter your password'
+- inputText: ${TEST_PASSWORD}
+- tapOn: 'Sign In'
+- assertVisible: 'Home Tab'
+# Navigate to profile
+- tapOn: 'Profile'
+- assertVisible: 'Profile'
+# Test sign out
+- tapOn: 'Sign Out'
+- assertVisible: 'Welcome Back'

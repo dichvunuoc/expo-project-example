@@ -1,10 +1,14 @@
+# Auth Flow Test
+# Tests the sign-in-by-email feature
+# FSD Layer: Features/Auth/SignInByEmail
 appId: ${APP_ID}
 ---
 - launchApp
+- assertVisible: 'Welcome Back'
 - tapOn: 'Enter your email'
 - inputText: ${TEST_EMAIL}
 - tapOn: 'Enter your password'
 - inputText: ${TEST_PASSWORD}
 - tapOn: 'Sign In'
-# Wait specifically for the Home text to appear to ensure navigation happened
+# Wait for successful navigation to Home Tab
 - assertVisible: 'Home Tab'

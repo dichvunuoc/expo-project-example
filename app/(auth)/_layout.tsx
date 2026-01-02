@@ -1,8 +1,13 @@
-import { useAuthStore } from '@/features/auth/store';
+/**
+ * Auth Layout (Expo Router)
+ * FSD Pattern: Proxy Pattern
+ */
+
 import { Redirect, Stack } from 'expo-router';
+import { useSessionStore } from '@/entities/session';
 
 export default function AuthLayout() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
 
   if (isAuthenticated) {
     return <Redirect href="/(tabs)" />;

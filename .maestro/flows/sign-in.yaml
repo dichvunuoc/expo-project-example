@@ -1,0 +1,14 @@
+# Sign In Flow Test
+# Tests the complete sign-in journey
+# FSD Feature: auth/sign-in-by-email
+appId: ${APP_ID}
+---
+- launchApp
+- assertVisible: 'Welcome Back'
+- tapOn: 'Enter your email'
+- inputText: test@example.com
+- tapOn: 'Enter your password'
+- inputText: password123
+- tapOn: 'Sign In'
+# Verify successful navigation
+- assertVisible: 'Home Tab'
