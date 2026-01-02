@@ -5,31 +5,30 @@
 
 // API functions
 export {
-  loginUser,
-  registerUser,
-  refreshToken,
-  resetPassword,
   changePassword,
   getCurrentUser,
+  loginUser,
   logout,
+  refreshToken,
+  registerUser,
+  resetPassword,
 } from './api';
 
-// Hooks
-export { useLogin } from './hooks/useLogin';
-export { useAuth } from './hooks/useAuth';
+// Note: Old hooks (useLogin, useAuth) have been removed.
+// Use ViewModels from sign-in-by-email and sign-up-by-email features instead.
 
 // Store
 export { useAuthStore } from './store';
 
 // Types
 export type {
-  User,
   AuthResponse,
+  ChangePasswordData,
   LoginCredentials,
   RegisterUserData,
   ResetPasswordData,
-  ChangePasswordData,
+  User,
 } from './types';
 
-// Schemas
-export { loginSchema, type LoginFormData } from './schemas/auth.schema';
+// Note: Schemas are now in individual features (sign-in-by-email, sign-up-by-email)
+// Use signInSchema from './sign-in-by-email' or signUpSchema from './sign-up-by-email'

@@ -5,12 +5,12 @@
  * Demo screen showing post feed
  */
 
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { PostFeed } from '@/widgets';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function DemoPage() {
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="flex-1" edges={['top']}>
       <PostFeed />
     </SafeAreaView>
   );

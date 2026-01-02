@@ -3,28 +3,55 @@
  * FSD Layer: Shared
  */
 
-import {
-  QueryClient,
-  MutationCache,
-  onlineManager,
-  focusManager,
-} from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
+import {
+  MutationCache,
+  QueryClient,
+  focusManager,
+  onlineManager,
+} from '@tanstack/react-query';
+
+// Guard to ensure setupOnlineManager only runs once
+let isOnlineManagerSetup = false;
 
 /**
  * Setup online manager for network status monitoring
  */
 export const setupOnlineManager = () => {
+  // Prevent multiple setups
+  if (isOnlineManagerSetup) {
+    return;
+  }
+
+  isOnlineManagerSetup = true;
+
   onlineManager.setEventListener((setOnline) => {
+    let lastStatus: boolean | null = null;
+    let initializationComplete = false;
+
     return NetInfo.addEventListener((state) => {
       const isOnline = state.isConnected ?? false;
-      setOnline(isOnline);
 
-      if (__DEV__) {
-        console.log(
-          `[Network] Status changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}`
-        );
+      // Only log if status actually changed (not during initialization spam)
+      if (lastStatus !== null && lastStatus !== isOnline) {
+        if (__DEV__) {
+          console.log(
+            `[Network] Status changed: ${isOnline ? 'ONLINE' : 'OFFLINE'}`
+          );
+        }
       }
+
+      // Mark initialization as complete after first event
+      if (!initializationComplete) {
+        initializationComplete = true;
+        // Only log initial status if offline (more important)
+        if (__DEV__ && !isOnline) {
+          console.log(`[Network] Initial status: OFFLINE`);
+        }
+      }
+
+      lastStatus = isOnline;
+      setOnline(isOnline);
 
       if (isOnline) {
         focusManager.setFocused(true);

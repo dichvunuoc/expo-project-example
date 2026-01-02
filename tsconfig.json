@@ -5,8 +5,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@/app": ["src/app/index.ts"],
-      "@/app/*": ["src/app/*"],
+      "@/core": ["src/core/index.ts"],
+      "@/core/*": ["src/core/*"],
       "@/pages": ["src/pages/index.ts"],
       "@/pages/*": ["src/pages/*"],
       "@/widgets": ["src/widgets/index.ts"],
@@ -18,7 +18,7 @@
       "@/shared/ui": ["src/shared/ui/index.ts"],
       "@/shared/lib": ["src/shared/lib/index.ts"],
       "@/shared/api": ["src/shared/api/index.ts"],
-      "@assets/*": ["assets/*"]
+      "@assets/*": ["src/shared/assets/*"]
     }
   },
   "include": [
@@ -28,6 +28,6 @@
     "nativewind-env.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
-    "src/app/types/**/*.d.ts"
+    "src/core/types/**/*.d.ts"
   ]
 }

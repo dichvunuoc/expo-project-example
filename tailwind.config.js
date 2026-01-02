@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-const { lightColors, darkColors } = require('./src/theme/colors');
+const { lightColors, darkColors } = require('./src/shared/theme/colors.ts');
 
 module.exports = {
   // QUAN TRỌNG: Phải trỏ đúng đến cả thư mục app và src

@@ -36,3 +36,13 @@ export {
   setupOnlineManager,
   getNetworkStatus,
 } from './query-client';
+
+// Mock API utilities
+export {
+  isMockEnabled,
+  setupMockAdapter,
+  mockUsers,
+  mockPosts,
+  type MockUser,
+  type MockPost,
+} from './mock';

@@ -1,17 +1,16 @@
-import { createMMKV } from 'react-native-mmkv';
+import {
+  createStorageInstance,
+  createZustandStorageAdapter,
+} from '@/shared/lib/storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { User } from './types';
+import { type User } from './types';
 
-// Create MMKV instance
-const storage = createMMKV();
+// Create MMKV instance for this store
+const storage = createStorageInstance({ id: 'auth-storage' });
 
 // Adapter for Zustand
-const zustandStorage = {
-  setItem: (name: string, value: string) => storage.set(name, value),
-  getItem: (name: string) => storage.getString(name) ?? null,
-  removeItem: (name: string) => storage.remove(name),
-};
+const zustandStorage = createZustandStorageAdapter(storage);
 
 interface AuthState {
   user: User | null;

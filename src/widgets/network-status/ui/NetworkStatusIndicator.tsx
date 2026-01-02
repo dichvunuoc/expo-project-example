@@ -5,11 +5,11 @@
  * Displays network connection status to the user
  */
 
+import { Text } from '@/shared/ui';
+import NetInfo from '@react-native-community/netinfo';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import NetInfo from '@react-native-community/netinfo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@/shared/ui';
 
 export function NetworkStatusIndicator() {
   const [networkState, setNetworkState] = useState({

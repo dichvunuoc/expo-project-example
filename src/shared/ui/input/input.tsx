@@ -1,7 +1,12 @@
-import { TextInput, TextInputProps, View, Text } from 'react-native';
-import { Controller, Control, FieldPath, FieldValues } from 'react-hook-form';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/shared/lib/cn';
+import { cva, type VariantProps } from 'class-variance-authority';
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from 'react-hook-form';
+import { Text, TextInput, View, type TextInputProps } from 'react-native';
 
 const inputVariants = cva(
   'w-full bg-white dark:bg-gray-800 rounded-xl border dark:text-white',
@@ -48,15 +53,19 @@ export function Input({
   inputClassName,
   errorClassName,
   className,
+  accessibilityLabel,
+  accessibilityHint,
   ...props
 }: InputProps) {
   const computedVariant = error ? 'error' : variant;
+  const inputAccessibilityLabel = accessibilityLabel || label;
 
   return (
     <View className={cn('space-y-2', containerClassName)}>
       {label && (
         <Text
           className={cn('mb-2 font-medium dark:text-gray-300', labelClassName)}
+          accessibilityRole="text"
         >
           {label}
         </Text>
@@ -67,10 +76,19 @@ export function Input({
           inputClassName || className
         )}
         placeholderTextColor={error ? '#ef4444' : '#9ca3af'}
+        accessibilityLabel={inputAccessibilityLabel}
+        accessibilityHint={
+          accessibilityHint || (error ? `Error: ${error}` : undefined)
+        }
+        accessibilityState={{ disabled: props.editable === false }}
         {...props}
       />
       {error && (
-        <Text className={cn('text-red-500 text-sm mt-1', errorClassName)}>
+        <Text
+          className={cn('text-red-500 text-sm mt-1', errorClassName)}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Text>
       )}

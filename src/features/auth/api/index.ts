@@ -1,27 +1,12 @@
-import { get, post } from '@/lib/axios';
-import {
-  APIError,
-  ErrorHandler,
-  AuthenticationError,
-} from '@/lib/error-handler';
+import { AuthenticationError, ErrorHandler, get, post } from '@/shared/api';
 import type {
   AuthResponse,
+  ChangePasswordData,
   LoginCredentials,
   RegisterUserData,
   ResetPasswordData,
-  ChangePasswordData,
   User,
 } from '../types';
-
-/**
- * Helper to check if error is an APIError with specific status
- */
-const isAPIErrorWithStatus = (
-  error: unknown,
-  status: number
-): error is APIError => {
-  return error instanceof APIError && error.status === status;
-};
 
 export const loginUser = async (
   credentials: LoginCredentials

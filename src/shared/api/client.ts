@@ -3,14 +3,16 @@
  * FSD Layer: Shared
  */
 
-import { Platform } from 'react-native';
+import { debug as logger, warn as warnLogger } from '@/shared/lib/logger';
 import axios, {
-  AxiosError,
-  AxiosRequestConfig,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosRequestConfig,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
 } from 'axios';
+import { Platform } from 'react-native';
 import { ErrorHandler, NetworkError } from './error-handler';
+import { setupMockAdapter } from './mock';
 
 // Type for token getter function (injected from session entity)
 type TokenGetter = () => string | null;
@@ -60,6 +62,12 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
+/**
+ * Setup mock adapter if mock mode is enabled
+ * This must be done before any requests are made
+ */
+setupMockAdapter(apiClient);
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -73,9 +81,16 @@ apiClient.interceptors.request.use(
     config.headers['X-Request-ID'] = requestId;
 
     if (__DEV__) {
-      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, {
-        requestId,
-      });
+      logger(
+        `API Request: ${config.method?.toUpperCase()} ${config.url}`,
+        {
+          requestId,
+        },
+        {
+          component: 'API',
+          action: config.method?.toUpperCase() || 'REQUEST',
+        }
+      );
     }
 
     return config;
@@ -92,9 +107,13 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     if (__DEV__) {
       const requestId = response.config.headers['X-Request-ID'];
-      console.log(
-        `[API] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
-        { requestId }
+      logger(
+        `API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
+        { requestId },
+        {
+          component: 'API',
+          action: response.config.method?.toUpperCase() || 'RESPONSE',
+        }
       );
     }
 
@@ -138,7 +157,10 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       if (getToken()) {
         if (__DEV__) {
-          console.warn('[API] Auto logout due to 401 response');
+          warnLogger('Auto logout due to 401 response', undefined, {
+            component: 'API',
+            action: 'AUTO_LOGOUT',
+          });
         }
         handleLogout();
       }

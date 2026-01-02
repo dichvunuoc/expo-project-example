@@ -9,12 +9,12 @@ const baseConfig = {
   slug: process.env.EXPO_PUBLIC_SLUG || 'com-techgen-template',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './src/shared/assets/images/icon.png',
   scheme: process.env.EXPO_PUBLIC_SCHEME || 'expoapp',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   splash: {
-    image: './assets/images/splash-icon.png',
+    image: './src/shared/assets/images/splash-icon.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
@@ -44,7 +44,7 @@ const baseConfig = {
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/images/adaptive-icon.png',
+      foregroundImage: './src/shared/assets/images/adaptive-icon.png',
       backgroundColor: '#ffffff',
     },
     package: process.env.EXPO_PUBLIC_ANDROID_PACKAGE || 'com.techgen.expo',
@@ -73,7 +73,7 @@ const baseConfig = {
   web: {
     bundler: 'metro',
     output: 'static',
-    favicon: './assets/images/favicon.png',
+    favicon: './src/shared/assets/images/favicon.png',
   },
   plugins: [
     'expo-router',
@@ -81,7 +81,7 @@ const baseConfig = {
     [
       'expo-notifications',
       {
-        icon: './assets/images/icon.png',
+        icon: './src/shared/assets/images/icon.png',
         color: '#ffffff',
       },
     ],
@@ -89,7 +89,7 @@ const baseConfig = {
       'expo-splash-screen',
       {
         backgroundColor: '#ffffff',
-        image: './assets/images/splash-icon.png',
+        image: './src/shared/assets/images/splash-icon.png',
         imageWidth: 200,
       },
     ],
