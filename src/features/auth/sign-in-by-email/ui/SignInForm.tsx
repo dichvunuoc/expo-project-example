@@ -1,43 +1,25 @@
 /**
- * SignInForm Component
+ * SignInForm Component (View)
  * FSD Layer: Features
+ * Pattern: MVVM
  *
- * Form UI for email/password sign in
+ * This is a "dumb" component that only contains JSX and styles.
+ * All business logic is delegated to useSignInViewModel hook.
+ *
+ * MVVM Rules:
+ * - NO useEffect, useState (complex), or direct API calls
+ * - ONLY call ViewModel hook and render UI
+ * - ONLY handle UI-specific concerns (styling, layout)
  */
 
-import { Alert, View } from 'react-native';
-import { useForm, FieldErrors } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { View } from 'react-native';
 import { Link } from 'expo-router';
 import { Button, ControlledInput, Text } from '@/shared/ui';
-import { useSignInMutation } from '../api';
-import { signInSchema, type SignInFormData } from '../model';
+import { useSignInViewModel } from '../model/useSignInViewModel';
 
 export function SignInForm() {
-  const signInMutation = useSignInMutation();
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignInFormData>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
-  const handleSignIn = (data: SignInFormData) => {
-    signInMutation.mutate(data);
-  };
-
-  const onError = (errors: FieldErrors<SignInFormData>) => {
-    const firstError = Object.values(errors)[0];
-    if (firstError?.message) {
-      Alert.alert('Validation Error', firstError.message);
-    }
-  };
+  // ViewModel provides all logic and state
+  const { form, actions, state } = useSignInViewModel();
 
   return (
     <View className="w-full max-w-sm space-y-4">
@@ -49,7 +31,7 @@ export function SignInForm() {
         <ControlledInput
           label="Email"
           placeholder="Enter your email"
-          control={control}
+          control={form.control}
           name="email"
           autoCapitalize="none"
           keyboardType="email-address"
@@ -58,7 +40,7 @@ export function SignInForm() {
         <ControlledInput
           label="Password"
           placeholder="Enter your password"
-          control={control}
+          control={form.control}
           name="password"
           secureTextEntry
         />
@@ -66,8 +48,8 @@ export function SignInForm() {
 
       <Button
         label="Sign In"
-        onPress={handleSubmit(handleSignIn, onError)}
-        isLoading={signInMutation.isPending}
+        onPress={actions.onSubmit}
+        isLoading={state.isPending}
         className="mt-6"
       />
 
