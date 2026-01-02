@@ -1,49 +1,25 @@
 /**
- * SignUpForm Component
+ * SignUpForm Component (View)
  * FSD Layer: Features
+ * Pattern: MVVM
  *
- * Form UI for email/password registration
+ * This is a "dumb" component that only contains JSX and styles.
+ * All business logic is delegated to useSignUpViewModel hook.
+ *
+ * MVVM Rules:
+ * - NO useEffect, useState (complex), or direct API calls
+ * - ONLY call ViewModel hook and render UI
+ * - ONLY handle UI-specific concerns (styling, layout)
  */
 
-import { Alert, View } from 'react-native';
-import { useForm, FieldErrors } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { View } from 'react-native';
 import { Link } from 'expo-router';
 import { Button, ControlledInput, Text } from '@/shared/ui';
-import { useSignUpMutation } from '../api';
-import { signUpSchema, type SignUpFormData } from '../model';
+import { useSignUpViewModel } from '../model/useSignUpViewModel';
 
 export function SignUpForm() {
-  const signUpMutation = useSignUpMutation();
-
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<SignUpFormData>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
-  });
-
-  const handleSignUp = (data: SignUpFormData) => {
-    signUpMutation.mutate({
-      name: data.name,
-      email: data.email,
-      password: data.password,
-    });
-  };
-
-  const onError = (errors: FieldErrors<SignUpFormData>) => {
-    const firstError = Object.values(errors)[0];
-    if (firstError?.message) {
-      Alert.alert('Validation Error', firstError.message);
-    }
-  };
+  // ViewModel provides all logic and state
+  const { form, actions, state } = useSignUpViewModel();
 
   return (
     <View className="w-full max-w-sm space-y-4">
@@ -55,7 +31,7 @@ export function SignUpForm() {
         <ControlledInput
           label="Name"
           placeholder="Enter your name"
-          control={control}
+          control={form.control}
           name="name"
           autoCapitalize="words"
         />
@@ -63,7 +39,7 @@ export function SignUpForm() {
         <ControlledInput
           label="Email"
           placeholder="Enter your email"
-          control={control}
+          control={form.control}
           name="email"
           autoCapitalize="none"
           keyboardType="email-address"
@@ -72,7 +48,7 @@ export function SignUpForm() {
         <ControlledInput
           label="Password"
           placeholder="Enter your password"
-          control={control}
+          control={form.control}
           name="password"
           secureTextEntry
         />
@@ -80,7 +56,7 @@ export function SignUpForm() {
         <ControlledInput
           label="Confirm Password"
           placeholder="Confirm your password"
-          control={control}
+          control={form.control}
           name="confirmPassword"
           secureTextEntry
         />
@@ -88,8 +64,8 @@ export function SignUpForm() {
 
       <Button
         label="Sign Up"
-        onPress={handleSubmit(handleSignUp, onError)}
-        isLoading={signUpMutation.isPending}
+        onPress={actions.onSubmit}
+        isLoading={state.isPending}
         className="mt-6"
       />
 

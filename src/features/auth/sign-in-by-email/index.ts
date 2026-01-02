@@ -1,15 +1,26 @@
 /**
  * Sign In By Email Feature (Public API)
  * FSD Layer: Features
+ * Pattern: MVVM
  *
  * Provides email/password authentication functionality.
+ *
+ * MVVM Structure:
+ * - View: SignInForm (ui/) - Dumb component, JSX only
+ * - ViewModel: useSignInViewModel (model/) - Business logic hook
+ * - Model: signInSchema, useSignInMutation (model/, api/) - Data & API
  */
 
-// UI
+// UI (View)
 export { SignInForm } from './ui';
 
-// Model
-export { signInSchema, type SignInFormData } from './model';
+// Model (ViewModel + Schema)
+export {
+  useSignInViewModel,
+  type SignInViewModelReturn,
+  signInSchema,
+  type SignInFormData,
+} from './model';
 
-// API
+// API (Model - Data Layer)
 export { useSignInMutation, signInUser } from './api';
